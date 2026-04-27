@@ -1,59 +1,48 @@
 (function (global) {
+  var dc = {};
 
-var dc = {};
+  // REMOVED "snippets/" because your files are in the main list
+  var homeHtml = "home-snippet.html"; 
+  var allCategoriesUrl = "https://coursera-jhu-default-rtdb.firebaseio.com/categories.json";
+  var categoriesTitleHtml = "menu-items-title.html";
+  var categoryHtml = "category-snippet.html";
 
-var homeHtml = "snippets/home-snippet.html";
-var allCategoriesUrl = 
-  "https://coursera-jhu-default-rtdb.firebaseio.com/categories.json";
-var categoriesTitleHtml = "snippets/menu-items-title.html";
-var categoryHtml = "snippets/category-snippet.html";
+  var insertHtml = function (selector, html) {
+    var targetElem = document.querySelector(selector);
+    targetElem.innerHTML = html;
+  };
 
-// Convenience function for inserting innerHTML for 'selector'
-var insertHtml = function (selector, html) {
-  var targetElem = document.querySelector(selector);
-  targetElem.innerHTML = html;
-};
+  var showLoading = function (selector) {
+    // REMOVED "images/" prefix
+    var html = "<div class='text-center'><img src='ajax-loader.gif'></div>";
+    insertHtml(selector, html);
+  };
 
-// Show loading icon inside element identified by 'selector'.
-var showLoading = function (selector) {
-  var html = "<div class='text-center'>";
-  html += "<img src='images/ajax-loader.gif'></div>";
-  insertHtml(selector, html);
-};
+  var insertProperty = function (string, propName, propValue) {
+    var propToReplace = "{{" + propName + "}}";
+    string = string.replace(new RegExp(propToReplace, "g"), propValue);
+    return string;
+  };
 
-// Return substitute of '{{propName}}' with 'propValue' in 'string'
-var insertProperty = function (string, propName, propValue) {
-  var propToReplace = "{{" + propName + "}}";
-  string = string.replace(new RegExp(propToReplace, "g"), propValue);
-  return string;
-};
+  document.addEventListener("DOMContentLoaded", function (event) {
+    showLoading("#main-content");
+    // STEP 1: Fetch categories
+    $ajaxUtils.sendGetRequest(allCategoriesUrl, buildAndShowHomeHTML, true);
+  });
 
-// On page load (before images or CSS)
-document.addEventListener("DOMContentLoaded", function (event) {
+  function buildAndShowHomeHTML (categories) {
+    $ajaxUtils.sendGetRequest(homeHtml, function (homeHtml) {
+      // STEP 2: Choose a random category
+      var randomCategoryIndex = Math.floor(Math.random() * categories.length);
+      var randomCategoryShortName = categories[randomCategoryIndex].short_name;
 
-// TODO: STEP 1: Use $ajaxUtils to send a GET request to allCategoriesUrl
-$ajaxUtils.sendGetRequest(allCategoriesUrl, buildAndShowHomeHTML, true); 
-});
+      // STEP 3: Substitute placeholder
+      var homeHtmlToInsertIntoMain = insertProperty(homeHtml, "randomCategoryShortName", "'" + randomCategoryShortName + "'");
 
-// Builds HTML for the home page based on categories array returned from the server.
-function buildAndShowHomeHTML (categories) {
+      // STEP 4: Insert into page
+      insertHtml("#main-content", homeHtmlToInsertIntoMain);
+    }, false);
+  }
 
-  // Load home snippet page
-  $ajaxUtils.sendGetRequest(homeHtml, function (homeHtml) {
-
-    // TODO: STEP 2: Choose a random category
-    var randomCategoryIndex = Math.floor(Math.random() * categories.length);
-    var randomCategoryShortName = categories[randomCategoryIndex].short_name;
-
-    // TODO: STEP 3: Substitute {{randomCategoryShortName}} with the random category
-    var homeHtmlToInsertIntoMain = insertProperty(homeHtml, "randomCategoryShortName", "'" + randomCategoryShortName + "'");
-
-    // TODO: STEP 4: Insert the produced HTML into the main page
-    insertHtml("#main-content", homeHtmlToInsertIntoMain);
-
-  }, false); // False because we don't want it to process as JSON
-}
-
-global.$dc = dc;
-
+  global.$dc = dc;
 })(window);
